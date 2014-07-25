@@ -7,10 +7,9 @@ import sys
 import pydoop.hdfs as hdfs
 # import pydoop.utils as utils
 
-# Number of mappers. Note this is not the same as
-# mapred.tasktracker.map.tasks.maximum which is set by the node
-# (mapred-site.xml)
-MR_TASKS = 2
+# Number of mappers. See also mapred.tasktracker.map.tasks.maximum in
+# mapred-site.xml
+MR_TASKS = 6
 # PYDOOP_EXE = os.path.join(os.path.expanduser('~'), '.local', 'bin', 'pydoop')
 PYDOOP_EXE = 'pydoop'
 
