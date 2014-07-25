@@ -27,6 +27,35 @@ import numpy as np
 import pydoop.hdfs as hdfs
 import pydoop.utils as utils
 
+import os
+import sys
+sys.path.append(os.path.expanduser(
+    '~/work/wnd-charm/build/lib.macosx-10.9-x86_64-2.7'))
+
+import pychrm
+from pychrm.FeatureSet import Signatures
+from pychrm.PyImageMatrix import PyImageMatrix
+
+
+def pychrm_small_features(img_arr):
+    assert len(img_arr.shape) == 2
+    pychrm_matrix = PyImageMatrix()
+    pychrm_matrix.allocate(img_arr.shape[0], img_arr.shape[1])
+    numpy_matrix = pychrm_matrix.as_ndarray()
+
+    numpy_matrix[:] = img_arr
+    feature_plan = pychrm.StdFeatureComputationPlans.getFeatureSet()
+    options = ""  # Wnd-charm options
+    fts = Signatures.NewFromFeatureComputationPlan(
+        pychrm_matrix, feature_plan, options)
+
+    # fts.{names, values, version}
+    return fts.values
+
+
+def basic_intensity_stats(img_arr):
+    return [img_arr.min(), img_arr.max(), img_arr.mean()]
+
 
 def get_array(path):
     with hdfs.open(path) as f:
@@ -34,8 +63,8 @@ def get_array(path):
 
 
 def calc_features(img_arr):
-    # FIXME: dummy
-    return np.random.random(img_arr.shape)
+    # return basic_intensity_stats(img_arr)
+    return pychrm_small_features(img_arr)
 
 
 def mapper(_, record, writer, conf):

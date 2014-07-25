@@ -1,34 +1,51 @@
 #!/usr/bin/env python
 
+import datetime as dt
 import os
-import numpy as np
+import sys
 
 import pydoop.hdfs as hdfs
-import pydoop.utils as utils
+# import pydoop.utils as utils
+
+# Number of mappers. Note this is not the same as
+# mapred.tasktracker.map.tasks.maximum which is set by the node
+# (mapred-site.xml)
+MR_TASKS = 2
+# PYDOOP_EXE = os.path.join(os.path.expanduser('~'), '.local', 'bin', 'pydoop')
+PYDOOP_EXE = 'pydoop'
 
 
-N_ARRAYS = 4
-SHAPE = (4, 5)
-PYDOOP_EXE = os.path.join(os.path.expanduser('~'), '.local', 'bin', 'pydoop')
+def timestamp_str():
+    return dt.datetime.now().strftime('%Y%m%d-%H%M%S')
 
 
-def main():
-    in_dir, mr_in, out_dir, mr_out = [
-        utils.make_random_str() for _ in xrange(4)
-        ]
-    print 'Image input dir:', in_dir
+def main(local_in):
+    ts = timestamp_str()
+    in_dir = 'in-%s' % ts
+    mr_in = 'mr-%s.in' % ts
+    out_dir = 'out-%s' % ts
+    mr_out = 'mr-%s.out' % ts
+
+    print 'Local input dir:', local_in
+    print 'HDFS input dir:', in_dir
+    print 'HDFS output dir:', out_dir
     print 'MapReduce input file:', mr_in
+    print 'MapReduce output file:', mr_out
+
+    hdfs.cp(hdfs.path.join('file:', os.path.abspath(local_in)), in_dir)
+
     with hdfs.open(mr_in, 'w') as mrf:
-        for i in xrange(N_ARRAYS):
-            path = hdfs.path.join(in_dir, 'a%d.npy' % (i+1))
-            with hdfs.open(path, 'w') as fo:
-                np.save(fo, np.random.random(SHAPE))
-                mrf.write('%s\n' % fo.name)
-    opts = '--num-reducers=0 -D mapred.map.tasks=2 -D out.dir=%s' % out_dir
+        for f in hdfs.lsl(in_dir, recursive=True):
+            if f['kind'] == 'file':
+                mrf.write('%s\n' % f['name'])
+    opts = '--num-reducers=0 -D mapred.map.tasks=%d -D out.dir=%s' % (
+        MR_TASKS, out_dir)
     cmd = '%s script %s features.py %s %s' % (PYDOOP_EXE, opts, mr_in, mr_out)
     print 'Running %r' % (cmd,)
     os.system(cmd)
 
+    hdfs.cp(out_dir, hdfs.path.join(
+        'file:', os.path.abspath(os.path.basename(out_dir))))
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1])
