@@ -23,6 +23,7 @@
 Pydoop script for image feature calculation.
 """
 import numpy as np
+#import time
 
 import pydoop.hdfs as hdfs
 import pydoop.utils as utils
@@ -74,6 +75,8 @@ def mapper(_, record, writer, conf):
     a = get_array(img_path)
     out_a = calc_features(a)
     out_path = hdfs.path.join(out_dir, '%s.out' % hdfs.path.basename(img_path))
+    #out_path = hdfs.path.join(out_dir, '%s.out-%d' % (
+    #    hdfs.path.basename(img_path), time.time() * 1000))
     with hdfs.open(out_path, 'w') as fo:
         np.save(fo, out_a)  # actual output
     writer.emit(img_path, fo.name)  # info (tab-separated input-output)
