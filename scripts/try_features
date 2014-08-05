@@ -18,6 +18,19 @@ def timestamp_str():
     return dt.datetime.now().strftime('%Y%m%d-%H%M%S')
 
 
+def chmodr(path, fmode, dmode=None):
+    if dmode is None:
+        dmode = fmode
+    if hdfs.path.isdir(path):
+        # lsl lists the contents of the dir
+        hdfs.chmod(path, dmode)
+    for p in hdfs.lsl(path, recursive=True):
+        if p['kind'] == 'directory':
+            hdfs.chmod(p['name'], dmode)
+        else:
+            hdfs.chmod(p['name'], fmode)
+
+
 def main(local_in):
     ts = timestamp_str()
     in_dir = 'in-%s' % ts
@@ -32,6 +45,7 @@ def main(local_in):
     print 'MapReduce output file:', mr_out
 
     hdfs.cp(hdfs.path.join('file:', os.path.abspath(local_in)), in_dir)
+    chmodr(in_dir, 'a+rx')
 
     with hdfs.open(mr_in, 'w') as mrf:
         for f in hdfs.lsl(in_dir, recursive=True):
@@ -39,6 +53,10 @@ def main(local_in):
                 mrf.write('%s\n' % f['name'])
     opts = '--num-reducers=0 -D mapred.map.tasks=%d -D out.dir=%s' % (
         MR_TASKS, out_dir)
+
+    hdfs.mkdir(out_dir)
+    hdfs.chmod(out_dir, 'a+rwx')
+
     cmd = '%s script %s features.py %s %s' % (PYDOOP_EXE, opts, mr_in, mr_out)
     print 'Running %r' % (cmd,)
     os.system(cmd)

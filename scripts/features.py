@@ -21,6 +21,8 @@
 
 """
 Pydoop script for image feature calculation.
+
+On some systems this may be run as the mapred system user
 """
 import numpy as np
 #import time
@@ -70,7 +72,9 @@ def calc_features(img_arr):
 
 def mapper(_, record, writer, conf):
     out_dir = conf.get('out.dir', utils.make_random_str())
-    hdfs.mkdir(out_dir)  # does nothing if out_dir already exists
+    if not hdfs.path.isdir(out_dir):
+        hdfs.mkdir(out_dir)
+        hdfs.chmod(out_dir, 'g+rwx')
     img_path = record.strip()
     a = get_array(img_path)
     out_a = calc_features(a)
@@ -79,4 +83,5 @@ def mapper(_, record, writer, conf):
     #    hdfs.path.basename(img_path), time.time() * 1000))
     with hdfs.open(out_path, 'w') as fo:
         np.save(fo, out_a)  # actual output
+    hdfs.chmod(out_path, 'g+rw')
     writer.emit(img_path, fo.name)  # info (tab-separated input-output)
