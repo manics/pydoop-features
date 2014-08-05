@@ -13,6 +13,10 @@ MR_TASKS = 2
 # PYDOOP_EXE = os.path.join(os.path.expanduser('~'), '.local', 'bin', 'pydoop')
 PYDOOP_EXE = 'pydoop'
 
+OPTS = ['--num-reducers=0',
+        '-D', 'mapred.map.tasks=%d' % MR_TASKS,
+        '--log-level', 'DEBUG']
+
 
 def timestamp_str():
     return dt.datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -51,12 +55,11 @@ def main(local_in):
         for f in hdfs.lsl(in_dir, recursive=True):
             if f['kind'] == 'file':
                 mrf.write('%s\n' % f['name'])
-    opts = '--num-reducers=0 -D mapred.map.tasks=%d -D out.dir=%s' % (
-        MR_TASKS, out_dir)
 
     hdfs.mkdir(out_dir)
     hdfs.chmod(out_dir, 'a+rwx')
 
+    opts = ' '.join(OPTS + ['-D', 'out.dir=%s' % out_dir])
     cmd = '%s script %s features.py %s %s' % (PYDOOP_EXE, opts, mr_in, mr_out)
     print 'Running %r' % (cmd,)
     os.system(cmd)

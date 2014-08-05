@@ -25,16 +25,15 @@ Pydoop script for image feature calculation.
 On some systems this may be run as the mapred system user
 """
 import numpy as np
-#import time
 from StringIO import StringIO
 
 import pydoop.hdfs as hdfs
 import pydoop.utils as utils
 
-import os
-import sys
-sys.path.append(os.path.expanduser(
-    '~/work/wnd-charm/build/lib.macosx-10.9-x86_64-2.7'))
+# import os
+# import sys
+# sys.path.append(os.path.expanduser(
+#     '~/work/wnd-charm/build/lib.macosx-10.9-x86_64-2.7'))
 
 import pychrm
 from pychrm.FeatureSet import Signatures
@@ -82,8 +81,6 @@ def mapper(_, record, writer, conf):
     a = get_array(img_path)
     out_a = calc_features(a)
     out_path = hdfs.path.join(out_dir, '%s.out' % hdfs.path.basename(img_path))
-    #out_path = hdfs.path.join(out_dir, '%s.out-%d' % (
-    #    hdfs.path.basename(img_path), time.time() * 1000))
     with hdfs.open(out_path, 'w') as fo:
         np.save(fo, out_a)  # actual output
     hdfs.chmod(out_path, 'g+rw')
