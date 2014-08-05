@@ -14,6 +14,7 @@ MR_TASKS = 2
 PYDOOP_EXE = 'pydoop'
 
 OPTS = ['--num-reducers=0',
+        '--no-override-env',
         '-D', 'mapred.map.tasks=%d' % MR_TASKS,
         '--log-level', 'DEBUG']
 
