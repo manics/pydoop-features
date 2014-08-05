@@ -26,6 +26,7 @@ On some systems this may be run as the mapred system user
 """
 import numpy as np
 #import time
+from StringIO import StringIO
 
 import pydoop.hdfs as hdfs
 import pydoop.utils as utils
@@ -61,8 +62,10 @@ def basic_intensity_stats(img_arr):
 
 
 def get_array(path):
+    # Read file manually to avoid c++ type errors between numpy and hdfs
     with hdfs.open(path) as f:
-        return np.load(f)
+        s = StringIO(f.read())
+        return np.load(s)
 
 
 def calc_features(img_arr):
