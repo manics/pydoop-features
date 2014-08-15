@@ -43,7 +43,7 @@ from pychrm.PyImageMatrix import PyImageMatrix
 def pychrm_small_features(img_arr):
     assert len(img_arr.shape) == 2
     pychrm_matrix = PyImageMatrix()
-    pychrm_matrix.allocate(img_arr.shape[0], img_arr.shape[1])
+    pychrm_matrix.allocate(img_arr.shape[1], img_arr.shape[0])
     numpy_matrix = pychrm_matrix.as_ndarray()
 
     numpy_matrix[:] = img_arr
