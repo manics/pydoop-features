@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
+	<!--property>
+		<name>mapred.cache.archives</name>
+		<value>libs.tgz#libs,venv-wndcharm.zip#venv-wndcharm</value>
+	</property-->
+
+	<property>
+		<name>mapred.create.symlink</name>
+		<value>yes</value>
+	</property>
+
+	<property>
+		<name>mapred.job.tracker</name>
+		<value>%HADOOP%:9000</value>
+	</property>
+	<property>
+		<name>mapred.tasktracker.map.tasks.maximum</name>
+		<value>2</value>
+	</property>
+	<property>
+	<!-- http://stackoverflow.com/questions/8027817/different-ways-of-configuring-the-memory-to-the-tasktracker-child-process-mappe -->
+		<name>mapred.child.java.opts</name>
+		<value>-Xmx4G</value>
+	</property>
+
+</configuration>
