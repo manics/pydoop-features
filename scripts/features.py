@@ -27,10 +27,10 @@ On some systems this may be run as the mapred system user
 from StringIO import StringIO
 
 
-# import os
-# import sys
-# sys.path.append(os.path.expanduser(
-#     '~/work/wnd-charm/build/lib.macosx-10.9-x86_64-2.7'))
+# mapred.cache.archives libs.tgz must contain the contents of libs/
+# without the parent directory (and should therefore contain a __init__.py
+# file):
+# tar -zcvf libs.tgz -C libs .
 
 
 import os

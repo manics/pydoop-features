@@ -17,6 +17,30 @@ OPTS = ['--num-reducers=0',
         '--no-override-env',
         '-D', 'mapred.map.tasks=%d' % MR_TASKS,
         '--log-level', 'DEBUG']
+#HADOOP_OPTS = ['-archives', 'libs.tgz']
+
+LOCAL_PREFIX = 'venv-wndcharm/venv-wndcharm'
+LD_LIBRARY_PATH = 'usr/lib64:usr/lib64/atlas'
+PYTHONPATH = 'lib/python2.6/site-packages:usr/lib64/python2.6/site-packages:usr/lib/python2.6/site-packages'
+
+
+def prefix_paths(prefix, paths):
+    sep = os.path.pathsep
+    return sep.join(os.path.join(prefix, p) for p in paths.split(sep))
+
+
+HADOOP_ENV = {
+    'LD_LIBRARY_PATH': prefix_paths(LOCAL_PREFIX, LD_LIBRARY_PATH),
+    'PYTHONPATH': prefix_paths(LOCAL_PREFIX, PYTHONPATH),
+    }
+HADOOP_OPTS = [
+    '-D',
+    'mapred.child.env=' + ','.join(
+        '%s=%s' % kv for kv in HADOOP_ENV.iteritems())
+   ]
+
+
+ARCHIVES = ['libs.tgz', 'venv-wndcharm.zip']
 
 
 def timestamp_str():
@@ -51,6 +75,13 @@ def main(local_in):
 
     hdfs.cp(hdfs.path.join('file:', os.path.abspath(local_in)), in_dir)
     chmodr(in_dir, 'a+rx')
+    for ar in ARCHIVES:
+        dst = os.path.basename(ar)
+        try:
+            hdfs.rmr(dst)
+        except IOError:
+            pass
+        hdfs.cp(hdfs.path.join('file:', os.path.abspath(ar)), '.')
 
     with hdfs.open(mr_in, 'w') as mrf:
         for f in hdfs.lsl(in_dir, recursive=True):
@@ -61,7 +92,10 @@ def main(local_in):
     hdfs.chmod(out_dir, 'a+rwx')
 
     opts = ' '.join(OPTS + ['-D', 'out.dir=%s' % out_dir])
-    cmd = '%s script %s features.py %s %s' % (PYDOOP_EXE, opts, mr_in, mr_out)
+    hopts = ' '.join(HADOOP_OPTS)
+    #cmd = '%s script %s features.py %s %s' % (PYDOOP_EXE, opts, mr_in, mr_out)
+    cmd = '%s script %s %s features.py %s %s' % (
+        PYDOOP_EXE, opts, hopts, mr_in, mr_out)
     print 'Running %r' % (cmd,)
     os.system(cmd)
 
