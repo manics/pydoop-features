@@ -24,20 +24,40 @@ Pydoop script for image feature calculation.
 
 On some systems this may be run as the mapred system user
 """
-import numpy as np
 from StringIO import StringIO
 
-import pydoop.hdfs as hdfs
-import pydoop.utils as utils
 
 # import os
 # import sys
 # sys.path.append(os.path.expanduser(
 #     '~/work/wnd-charm/build/lib.macosx-10.9-x86_64-2.7'))
 
-import pychrm
-from pychrm.FeatureSet import Signatures
-from pychrm.PyImageMatrix import PyImageMatrix
+
+import os
+import sys
+
+
+IMPORTS_FAILED = None
+
+try:
+    import numpy as np
+
+    import pydoop.hdfs as hdfs
+    import pydoop.utils as utils
+
+    import wndcharm
+    from wndcharm.FeatureSet import Signatures
+    from wndcharm.PyImageMatrix import PyImageMatrix
+except ImportError as e:
+    print e
+    print '\n'.join(sys.path)
+    print os.listdir('.')
+    for a in os.walk('venv-wndcharm'):
+        print '%s\n%s' % (a[0], '\n\t'.join(a[2]))
+    for kv in os.environ.iteritems():
+        print '%s=%s' % kv
+    IMPORTS_FAILED = e
+    raise
 
 
 def pychrm_small_features(img_arr):
@@ -47,7 +67,7 @@ def pychrm_small_features(img_arr):
     numpy_matrix = pychrm_matrix.as_ndarray()
 
     numpy_matrix[:] = img_arr
-    feature_plan = pychrm.StdFeatureComputationPlans.getFeatureSet()
+    feature_plan = wndcharm.StdFeatureComputationPlans.getFeatureSet()
     options = ""  # Wnd-charm options
     fts = Signatures.NewFromFeatureComputationPlan(
         pychrm_matrix, feature_plan, options)
@@ -73,6 +93,10 @@ def calc_features(img_arr):
 
 
 def mapper(_, record, writer, conf):
+    if IMPORTS_FAILED:
+        print IMPORTS_FAILED
+        raise IMPORTS_FAILED
+
     out_dir = conf.get('out.dir', utils.make_random_str())
     if not hdfs.path.isdir(out_dir):
         hdfs.mkdir(out_dir)
