@@ -2,6 +2,7 @@
 
 import datetime as dt
 import os
+import subprocess
 import sys
 
 import pydoop.hdfs as hdfs
@@ -21,7 +22,10 @@ OPTS = ['--num-reducers=0',
 
 LOCAL_PREFIX = 'venv-wndcharm/venv-wndcharm'
 LD_LIBRARY_PATH = 'usr/lib64:usr/lib64/atlas'
-PYTHONPATH = 'lib/python2.6/site-packages:usr/lib64/python2.6/site-packages:usr/lib/python2.6/site-packages'
+PYTHONPATH = ':'.join([
+    'lib/python2.6/site-packages',
+    'usr/lib64/python2.6/site-packages',
+    'usr/lib/python2.6/site-packages'])
 
 
 def prefix_paths(prefix, paths):
@@ -51,6 +55,13 @@ def get_archive_args(archives):
     return ['-D', 'mapred.cache.archives=%s' % ','.join(ars)]
 
 OPTS.extend(get_archive_args(ARCHIVES))
+
+ENV_OVERRIDE = {}
+#ENV_OVERRIDE = {
+#    'HADOOP_CONF_DIR': '/Users/simon/work/pydoop-features/scripts/conf.run',
+#    'HADOOP_USER_NAME': 'omero',
+#    'CLASSPATH': None,
+#    }
 
 def timestamp_str():
     return dt.datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -82,6 +93,10 @@ def main(local_in, local_out=None):
     print 'MapReduce input file:', mr_in
     print 'MapReduce output file:', mr_out
 
+    # The OMERO CLASSPATH causes problems with Hadoop
+    #for kv in os.environ.iteritems():
+    #    print '%s=%s' % kv
+
     hdfs.cp(hdfs.path.join('file:', os.path.abspath(local_in)), in_dir)
     chmodr(in_dir, 'a+rx')
     for ar in ARCHIVES:
@@ -100,13 +115,16 @@ def main(local_in, local_out=None):
     hdfs.mkdir(out_dir)
     hdfs.chmod(out_dir, 'a+rwx')
 
-    opts = ' '.join(OPTS + ['-D', 'out.dir=%s' % out_dir])
-    hopts = ' '.join(HADOOP_OPTS)
-    #cmd = '%s script %s features.py %s %s' % (PYDOOP_EXE, opts, mr_in, mr_out)
-    cmd = '%s script %s %s features.py %s %s' % (
-        PYDOOP_EXE, opts, hopts, mr_in, mr_out)
-    print 'Running %r' % (cmd,)
-    os.system(cmd)
+    opts = OPTS + ['-D', 'out.dir=%s' % out_dir] + HADOOP_OPTS
+    cmd = [PYDOOP_EXE, 'script'] + opts + ['features.py'] + [mr_in, mr_out]
+
+    env = os.environ.copy()
+    env.update(ENV_OVERRIDE)
+
+    print 'Running %s' % cmd
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    print 'stdout:\n%s\n\nstderr:\n%s\n' % (stdout, stderr)
 
     if not local_out:
         local_out = os.path.basename(out_dir)
