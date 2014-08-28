@@ -37,8 +37,20 @@ import os
 import sys
 
 
-IMPORTS_FAILED = None
+def setup_system_paths():
+    prefix = 'venv-wndcharm/venv-wndcharm'
+    libpaths = [
+        'usr/lib64/python2.6/site-packages',
+        'usr/lib/python2.6/site-packages',
+        'usr/lib64',
+        'usr/lib64/atlas',
+    ]
+    for p in libpaths:
+        sys.path.insert(0, os.path.join(os.getcwd(), prefix, p))
+    sys.path.insert(0, os.path.join(os.getcwd(), 'libs'))
 
+
+#setup_system_paths()
 try:
     import numpy as np
 
@@ -49,14 +61,15 @@ try:
     from wndcharm.FeatureSet import Signatures
     from wndcharm.PyImageMatrix import PyImageMatrix
 except ImportError as e:
-    print e
-    print '\n'.join(sys.path)
-    print os.listdir('.')
+    print 'ImportError: %s' % e
+    print 'sys.path:\n' + '\n\t'.join(sys.path)
+    print 'dir:\n%s' % os.listdir('.')
+    print 'venv-wndcharm:'
     for a in os.walk('venv-wndcharm'):
-        print '%s\n%s' % (a[0], '\n\t'.join(a[2]))
+        print '\t%s\n%s' % (a[0], '\n\t'.join(a[2]))
+    print 'environ:'
     for kv in os.environ.iteritems():
-        print '%s=%s' % kv
-    IMPORTS_FAILED = e
+        print '\t%s=%s' % kv
     raise
 
 
@@ -93,18 +106,7 @@ def calc_features(img_arr):
 
 
 def mapper(_, record, writer, conf):
-    if IMPORTS_FAILED:
-        print IMPORTS_FAILED
-        raise IMPORTS_FAILED
-
-    try:
-        from libs import pkg
-    except Exception as e:
-        print e
-        print sys.path
-        print os.listdir('.')
-        print os.listdir(sys.path[0])
-        raise
+    setup_system_paths()
 
     out_dir = conf.get('out.dir', utils.make_random_str())
     if not hdfs.path.isdir(out_dir):
