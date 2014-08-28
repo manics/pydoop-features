@@ -40,24 +40,30 @@ log.setLevel(logging.INFO)
 class Connection(object):
 
     def __init__(self, host=None, port=None, user=None, password=None,
-                 sessionid=None, groupid=-1, detach=False):
-        if not host:
-            host = 'localhost'
-        if not port:
-            port = 4064
-        if not sessionid:
+                 sessionid=None, groupid=-1, detach=False, client=None):
+        if client:
+            self.client = client
+        else:
+            if not host:
+                host = 'localhost'
+            if not port:
+                port = 4064
+            self.client = omero.client(host, port)
+
+        if sessionid:
+            self.session = self.client.joinSession(sessionid)
+            log.info('Joined session as: %s', self.session)
+        elif client.getSession():
+            self.session = client.getSession()
+            log.info('Using existing client session: %s', self.session)
+        else:
             if not user:
                 user = raw_input('User: ')
             if not password:
                 password = getpass.getpass()
-
-        self.client = omero.client(host, port)
-        if sessionid:
-            self.session = self.client.joinSession(sessionid)
-            log.info('Joined session as: %s', self.session)
-        else:
             self.session = self.client.createSession(user, password)
             log.info('Created session: %s', self.session)
+
         self.client.enableKeepAlive(60)
         self.conn = omero.gateway.BlitzGateway(client_obj=self.client)
         self.conn.SERVICE_OPTS.setOmeroGroup(groupid)
