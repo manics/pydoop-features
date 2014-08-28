@@ -60,7 +60,7 @@ def chmodr(path, fmode, dmode=None):
             hdfs.chmod(p['name'], fmode)
 
 
-def main(local_in):
+def main(local_in, local_out=None):
     ts = timestamp_str()
     in_dir = 'in-%s' % ts
     mr_in = 'mr-%s.in' % ts
@@ -99,8 +99,11 @@ def main(local_in):
     print 'Running %r' % (cmd,)
     os.system(cmd)
 
-    hdfs.cp(out_dir, hdfs.path.join(
-        'file:', os.path.abspath(os.path.basename(out_dir))))
+    if not local_out:
+        local_out = os.path.basename(out_dir)
+    local_out = os.path.abspath(local_out)
+    hdfs.cp(out_dir, hdfs.path.join('file:', local_out))
+
 
 if __name__ == '__main__':
     main(sys.argv[1])
