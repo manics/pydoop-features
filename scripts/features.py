@@ -97,6 +97,15 @@ def mapper(_, record, writer, conf):
         print IMPORTS_FAILED
         raise IMPORTS_FAILED
 
+    try:
+        from libs import pkg
+    except Exception as e:
+        print e
+        print sys.path
+        print os.listdir('.')
+        print os.listdir(sys.path[0])
+        raise
+
     out_dir = conf.get('out.dir', utils.make_random_str())
     if not hdfs.path.isdir(out_dir):
         hdfs.mkdir(out_dir)
