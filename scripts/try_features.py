@@ -40,8 +40,17 @@ HADOOP_OPTS = [
    ]
 
 
-ARCHIVES = ['libs.tgz', 'venv-wndcharm.zip']
+ARCHIVES = ['venv-wndcharm.zip']
 
+def get_archive_args(archives):
+    ars = []
+    for a in archives:
+        name = os.path.basename(a)
+        sym = os.path.splitext(name)[0]
+        ars.append(name + '#' + sym)
+    return ['-D', 'mapred.cache.archives=%s' % ','.join(ars)]
+
+OPTS.extend(get_archive_args(ARCHIVES))
 
 def timestamp_str():
     return dt.datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -103,7 +112,8 @@ def main(local_in, local_out=None):
         local_out = os.path.basename(out_dir)
     local_out = os.path.abspath(local_out)
     hdfs.cp(out_dir, hdfs.path.join('file:', local_out))
+    return out_dir
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    main(*sys.argv[1:])
